@@ -7,14 +7,31 @@ const token = config.token
 
 // When the bot is ready for use, set the playing status to the help command, and log in the console that the bot has started.
 bot.on('ready', () => {
-    bot.user.setActivity(`${config.prefix}help`, { type: 'PLAYING' })
+    bot.user.setActivity(`@Guild-Maker prefix`, { type: 'PLAYING' } )
     console.log("Bot started")
 })
 
+// Start the bot
+bot.login(token)
+
 // Message handler for the bot
 bot.on('message', async msg => {
-    // Set the prefix based on the config
-    let prefix = config.prefix
+
+    // Check if server has changed the prefix, if not, then use the default.
+    let prefixes = JSON.parse(fs.readFileSync('./prefixes.json', 'utf8'))
+    if(!prefixes[msg.guild.id]) {
+        prefixes[msg.guild.id] = {
+            prefixes: config.prefix
+        }
+    }
+    
+    let prefix = prefixes[msg.guild.id].prefixes
+    if(msg.cleanContent.startsWith(`@${bot.user.username}`)) {
+        if(msg.content.includes("prefix")) {
+            msg.reply(`The ${bot.user.username}'s prefix in this server is: \`${prefix}\``)
+        }
+    } //return msg.reply(`It appears you lost the Use ${prefix}help for more info`)
+
     // Check if the message starts with the prefix if not, do nothing
     if(!msg.content.startsWith(prefix) || msg.author.bot) return
     // Cut the sent message in parts where [0] is the base command 
@@ -88,13 +105,12 @@ bot.on('message', async msg => {
                 if(args[2]) return msg.reply(`I'm sorry, this command doesn't exist. Use ${prefix}help for more info`)
                 try{
                     // Read the current config and set the prefix to the new prefix
-                    let botConfig = JSON.parse(fs.readFileSync('./config.json', 'utf8'))
-                    botConfig["prefix"] = args[1]
-        
-                    // Save the new prefix in the config file and change the playing status of the bot
-                    fs.writeFileSync('./config.json', JSON.stringify(botConfig), err => err ? console.log(err) : null)
-                    config = JSON.parse(fs.readFileSync('./config.json', 'utf8'))
-                    bot.user.setActivity(`${args[1]}help`, { type: 'PLAYING' })
+                    let prefixes = JSON.parse(fs.readFileSync('./prefixes.json', 'utf8'))
+                    prefixes[msg.guild.id] = {
+                        prefixes: args[1]
+                    }
+
+                    fs.writeFileSync('./prefixes.json', JSON.stringify(prefixes), err => err ? console.log(err) : null)
 
                     // Make and send an embed with the new prefix
                     const newPrefixEmbed = new MessageEmbed()
@@ -110,10 +126,11 @@ bot.on('message', async msg => {
                 // If the author doesn't have the administrator permission, reply with an error
                 msg.reply("I'm sorry, you don't have permission to change the prefix.")
             }
+            break
+        default:
+            msg.reply(`I'm sorry, this command doesn't exist. Use ${prefix}help for more info`)
     }
 })
-// Start the bot
-bot.login(token)
 
 // Create roles based on the guild name with a random color
 let createRoles = async (msg, guildName, color) => {
