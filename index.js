@@ -26,11 +26,13 @@ bot.on('message', async msg => {
     }
     
     let prefix = prefixes[msg.guild.id].prefixes
+
+    // Checks for messages tagging the bot for messages containing prefix and then sends the prefix to the author
     if(msg.cleanContent.startsWith(`@${bot.user.username}`)) {
         if(msg.content.includes("prefix")) {
             msg.reply(`The ${bot.user.username}'s prefix in this server is: \`${prefix}\``)
         }
-    } //return msg.reply(`It appears you lost the Use ${prefix}help for more info`)
+    }
 
     // Check if the message starts with the prefix if not, do nothing
     if(!msg.content.startsWith(prefix) || msg.author.bot) return
